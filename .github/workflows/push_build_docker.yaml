@@ -132,7 +132,7 @@ jobs:
             				},
             				{
             					"type": "mrkdwn",
-            					"text": "*Status:*\n:fire: *${{ needs.docker.outputs.job-status }}*"
+            					"text": "*Status:*\n:grey_exclamation: *${{ needs.docker.outputs.job-status }}*"
             				}
             			]
             		},
@@ -156,7 +156,7 @@ jobs:
             				},
             				{
             					"type": "mrkdwn",
-            					"text": "*Status:*\n:fire: *${{ needs.cluster.outputs.job-status }}*"
+            					"text": "*Status:*\n:grey_exclamation: *${{ needs.cluster.outputs.job-status }}*"
             				}
             			]
             		}
