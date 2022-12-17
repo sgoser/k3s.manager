@@ -1,0 +1,96 @@
+name: CI. Build & Push container
+
+on:
+  push:
+    tags:
+      - "v*.*"
+
+env:
+    DHUB_USER_NAME: ${{ github.actor }}
+    IMAGE_NAME: "nginx-webserver"
+
+jobs:
+  docker:
+    outputs:
+      output1: ${{ steps.time.outputs.datetime }}
+      job-status: ${{ job.status }}
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Check out the repo
+        uses: actions/checkout@v3
+      - 
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - 
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DHUB_USER_NAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DHUB_USER_NAME }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.DHUB_USER_NAME }}/${{ env.IMAGE_NAME }}:${{  github.ref_name }}
+      -
+        name: Send time finish job
+        id: time
+        run: |
+          echo "datetime=$(date '+%F %T')" >> $GITHUB_OUTPUT
+
+  slack:
+    needs: docker
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Post to a Slack channel
+        uses: slackapi/slack-github-action@v1.23.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        with:
+          channel-id: 'C04EWNX7BT3'
+          payload: |
+            {
+            	"blocks": [
+                {
+                  "type": "divider"
+                },
+            		{
+            			"type": "section",
+            			"text": {
+            				"type": "mrkdwn",
+            				"text": "Results of the action jobs in the repository:\n*<https://github.com/${{ github.repository }}|${{ github.repository }}>*"
+            			}
+            		},
+            		{
+            			"type": "divider"
+            		},
+            		{
+            			"type": "section",
+            			"fields": [
+            				{
+            					"type": "mrkdwn",
+            					"text": "*Job:*\nCreate and push image to DockerHub"
+            				},
+            				{
+            					"type": "mrkdwn",
+            					"text": "*When:*\n${{needs.docker.outputs.output1}}"
+            				},
+            				{
+            					"type": "mrkdwn",
+            					"text": "*Image Link:*\n<https://hub.docker.com/repository/docker/${{ env.DHUB_USER_NAME }}/${{ env.IMAGE_NAME }}|${{ env.IMAGE_NAME }}>"
+            				},
+            				{
+            					"type": "mrkdwn",
+            					"text": "*Status:*\n:fire: *${{ needs.docker.outputs.job-status }}*"
+            				}
+            			]
+            		}
+            	]
+            }
