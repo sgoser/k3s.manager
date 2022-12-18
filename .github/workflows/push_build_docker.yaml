@@ -2,15 +2,16 @@ name: CI. Build & Push container
 
 on:
   push:
-    branches:
-      - main
+    #branches:
+    #  - main
     tags:
       - "v*.*"
 
 env:
     DHUB_USER_NAME: ${{ github.actor }}
     IMAGE_NAME: "nginx-webserver"
-    RESULT_FILE: pods_statuses.log
+    RESULT_FILE: result.log
+    K8S_NS: webserver-ns # used in kubectl get rs
 
 jobs:
   docker:
@@ -54,6 +55,9 @@ jobs:
       job-status: ${{ job.status }}
     runs-on: ubuntu-latest
     steps:
+    - 
+      name: Check out the repo
+      uses: actions/checkout@v3
     -
       name: Add SSH key and Make SSH tunnel to k8s (special)
       run: |
@@ -70,11 +74,22 @@ jobs:
         base64-kube-config: ${{ secrets.KUBE_CONFIG }}
     -
       run: mkdir artifact
-    - 
-      name: Get pods statuses
-      id: deploy
+    -
+      name: Set new image in k8s manifest
       run: |
-        kubectl get pods -A >> artifact/${{ env.RESULT_FILE }}
+        sed -i 's/<<image:tag>>/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' app-webserver.yaml
+    - 
+      name: Deploy app to cluster
+      run: |
+        kubectl apply -f app-webserver.yaml
+    - 
+      name: Get Statuses replicaset, deploy, etc
+      run: |
+        sleep 30
+        echo "ReplicaSet" >> artifact/${{ env.RESULT_FILE }}
+        kubectl get rs -n ${{ env.K8S_NS }} >> artifact/${{ env.RESULT_FILE }}
+        echo "Deployments" >> artifact/${{ env.RESULT_FILE }}
+        kubectl get deployments -n ${{ env.K8S_NS }} >> artifact/${{ env.RESULT_FILE }}
     -
       name: Upload artifacts
       uses: actions/upload-artifact@v3
@@ -152,7 +167,7 @@ jobs:
             				},
             				{
             					"type": "mrkdwn",
-            					"text": "*Text:*\nText"
+            					"text": "*App Link:*\n<http://web.k8s-4.sa|web.k8s-4.sa>"
             				},
             				{
             					"type": "mrkdwn",
