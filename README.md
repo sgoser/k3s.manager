@@ -11,3 +11,7 @@ Turn up SSH tunnel using sshuttle. Check pods statuses on cluster
 ## Job 3. Slack notification
 
 Send message and file with pods statuses
+
+## Job 4. Send file to Slack
+
+Send Deployments, ReplicaSet, Pods statuses as file to Slack

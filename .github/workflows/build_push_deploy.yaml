@@ -1,4 +1,4 @@
-name: CI. Build & Push container
+name: CI/CD. Build Push Deploy
 
 on:
   push:
@@ -8,10 +8,11 @@ on:
       - "v*.*"
 
 env:
-    DHUB_USER_NAME: ${{ github.actor }}
-    IMAGE_NAME: "nginx-webserver"
-    RESULT_FILE: result.log
-    K8S_NS: webserver-ns # used in kubectl get rs
+    DHUB_USER_NAME: ${{ github.actor }} # used to login dockerhub
+    IMAGE_NAME: "nginx-webserver" # used to set image name in dockerhub
+    RESULT_FILE: result.log # used as artifact
+    K8S_NS: webserver-ns # used in kubectl commands
+    GET_STAT_TIMER: 60 # used in sleep before collecting stats
 
 jobs:
   docker:
@@ -24,6 +25,11 @@ jobs:
       - 
         name: Check out the repo
         uses: actions/checkout@v3
+      -
+        name: Replace line - image and tag in index.html
+        run: |
+          sed -i 's/__dh_image:__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}/' index.html
+          sed -i 's/__dh_image:tag__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' index.html
       - 
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -77,7 +83,7 @@ jobs:
     -
       name: Set new image in k8s manifest
       run: |
-        sed -i 's/<<image:tag>>/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' app-webserver.yaml
+        sed -i 's/__dh_image:tag__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' app-webserver.yaml
     - 
       name: Deploy app to cluster
       run: |
@@ -85,11 +91,13 @@ jobs:
     - 
       name: Get Statuses replicaset, deploy, etc
       run: |
-        sleep 30
-        echo "ReplicaSet" >> artifact/${{ env.RESULT_FILE }}
-        kubectl get rs -n ${{ env.K8S_NS }} >> artifact/${{ env.RESULT_FILE }}
+        sleep ${{ env.GET_STAT_TIMER }}
         echo "Deployments" >> artifact/${{ env.RESULT_FILE }}
         kubectl get deployments -n ${{ env.K8S_NS }} >> artifact/${{ env.RESULT_FILE }}
+        echo "ReplicaSet" >> artifact/${{ env.RESULT_FILE }}
+        kubectl get rs -n ${{ env.K8S_NS }} >> artifact/${{ env.RESULT_FILE }}
+        echo "Pods" >> artifact/${{ env.RESULT_FILE }}
+        kubectl get pods -n ${{ env.K8S_NS }} >> artifact/${{ env.RESULT_FILE }}
     -
       name: Upload artifacts
       uses: actions/upload-artifact@v3
