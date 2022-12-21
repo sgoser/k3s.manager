@@ -83,11 +83,11 @@ jobs:
     -
       name: Set new image in k8s manifest
       run: |
-        sed -i 's/__dh_image:tag__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' app-webserver.yaml
+        sed -i 's/__dh_image:tag__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' ghaction-app-webserver.yaml
     - 
       name: Deploy app to cluster
       run: |
-        kubectl apply -f app-webserver.yaml
+        kubectl apply -f ghaction-app-webserver.yaml
     - 
       name: Get Statuses replicaset, deploy, etc
       run: |
