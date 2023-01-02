@@ -13,6 +13,7 @@ env:
     RESULT_FILE: result.log # used as artifact
     K8S_NS: webserver-ns # used in kubectl commands
     GET_STAT_TIMER: 60 # used in sleep before collecting stats
+    DEPLOY_FILE: deploy-webserver-ghaction.yaml # deployment file
 
 jobs:
   docker:
@@ -83,11 +84,11 @@ jobs:
     -
       name: Set new image in k8s manifest
       run: |
-        sed -i 's/__dh_image:tag__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' ghaction-app-webserver.yaml
+        sed -i 's/__dh_image:tag__/${{ env.DHUB_USER_NAME }}\/${{ env.IMAGE_NAME }}:${{  github.ref_name }}/' ${{ env.DEPLOY_FILE }}
     - 
       name: Deploy app to cluster
       run: |
-        kubectl apply -f ghaction-app-webserver.yaml
+        kubectl apply -f ${{ env.DEPLOY_FILE }}
     - 
       name: Get Statuses replicaset, deploy, etc
       run: |

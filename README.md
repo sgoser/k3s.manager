@@ -6,7 +6,11 @@ Make image from files in repo and push it to DockerHub registry
 
 ## Job 2. SSH and Cluster
 
-Turn up SSH tunnel using sshuttle. Check pods statuses on cluster
+Turn up SSH tunnel using sshuttle.
+
+Deployig app on cluster using docker image from previous step (namespase must exist)
+
+Check pods statuses on cluster
 
 ## Job 3. Slack notification
 
