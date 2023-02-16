@@ -2,7 +2,7 @@
 
 ## Application
 
-Simple Nginx Web-server with changeable index.html created as configmap in deployment.
+Simple Nginx Web-server with changeable index.html created as configmap in deployment manifest.
 
 ## Steps of GitHub workflow (multijob)
 
@@ -20,7 +20,7 @@ Check pods statuses on cluster
 
 ### Job 3. Slack notification
 
-Send message and file with pods statuses (multiline rich json formatted - [Slack Bck Kit](https://api.slack.com/block-kit/building))
+Send message and file with pods statuses (multiline rich json formatted - [Slack Block Kit](https://api.slack.com/block-kit/building))
 
 ### Job 4. Send file to Slack
 
